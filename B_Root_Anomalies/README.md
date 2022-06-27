@@ -1,6 +1,6 @@
 # Installation
 
-You will need libpcap-dev installed. Afterwards, running make will produce
+You will need libpcap-dev installed. Afterwards, running `make` will produce
 executables tag and stats. Stats uses libpcap to read relevant data from
 pcap files. It only reads packets to port 53 (this can be changed by changing
 filter options in stats.cc).
