@@ -8,6 +8,7 @@
 #include "utils.h"
 
 bool first = true;
+bool attacksources = false;
 long int starttime = 0;
 long int endtime = 0;
 long int lasttime = 0;
@@ -74,11 +75,15 @@ int process(char* buffer, double &outtime, int& outlen, int& outttl)
 	{
 	  isattack = true;	  
 	}
-    if (attackers.find(ip) != attackers.end())
+    if (attackers.find(ip) != attackers.end() && attacksources)
       {
 	isattack = true;
       }
-    cout<<recordID<<" "<<isattack<<endl;
+    cout<<recordID<<" ";
+    if (isattack)
+      cout<<"A\n";
+    else
+      cout<<"B\n";
     return 0;
 }
 
@@ -93,6 +98,7 @@ void printHelp()
   printf ("-e <epoch>                     End at this epoch time in UTC\n");
   printf ("-E <ext>                       Only process files with this extension in the name (e.g., lax, mia)\n");
   printf ("-a <file>                      Optionally read attack IPs from this file\n");
+  printf ("-A                             Tag all traffic from attack IPs as attack\n");
   printf ("-q <query>                     This is a substring occuring in attack queries, you can repeat this arg spec multiple times\n");
 }
 
@@ -113,7 +119,7 @@ int main(int argc, char** argv)
   for (int i = 0; i<argc; i++)
     cout<<argv[i]<<" ";
   cout<<endl;
-  while ((c = getopt (argc, argv, "hs:e:E:a:q:r:")) != '?')
+  while ((c = getopt (argc, argv, "hs:e:E:a:q:r:A")) != '?')
     {
       if ((c == 255) || (c == -1))
 	break;
@@ -126,6 +132,9 @@ int main(int argc, char** argv)
 	  break;
 	case 'r':
 	  readfolder = optarg;
+	  break;
+	case 'A':
+	  attacksources = true;
 	  break;
 	case 'q':
 	  queries.insert(optarg);
