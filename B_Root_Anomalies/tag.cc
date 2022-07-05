@@ -3,15 +3,18 @@
 #include<sys/time.h>
 #include<vector>
 #include<deque>
+#include<map>
 #include<algorithm>
 
 #include "utils.h"
 
 bool first = true;
 bool attacksources = false;
+bool atlist = false;
+int PERIOD = 60;
 long int starttime = 0;
 long int endtime = 0;
-long int lasttime = 0;
+double lasttime = 0;
 
 string readfolder = "";
 string infile = "";
@@ -19,7 +22,9 @@ string atfile = "";
 string extension = "";
 
 set<string> queries;
-set<string> attackers;
+
+int attackers[(int)pow(2,27)];
+
 long int total = 0;
 long int afiltered = 0, apassed = 0;
 long int gfiltered = 0, gpassed = 0;
@@ -28,9 +33,10 @@ long int passed = 0;
 // We store delimiters in this array
 int* delimiters;
 
-
 void loadattackers(string infile)
 {
+  memset(attackers, 0, pow(2,24)*8);
+  int i = 0;
   ifstream in(infile, std::ofstream::in);
   while (in.good())
     {
@@ -39,52 +45,71 @@ void loadattackers(string infile)
       in>>ip;
       if (!in.good())
 	break;
-      attackers.insert(ip);
-      //cout<<"Inserted attacker "<<ip<<endl;
+      unsigned int ipi=todec(ip);
+      attackers[int(ipi/32)] = attackers[int(ipi/32)] | (1 >> (ipi % 32));
+      i++;
+      if (i % 100000 == 0)
+	cout<<"Inserted attacker "<<ip<<endl;
     }
   in.close();
 }
 
-
-
-
-int process(char* buffer, double &outtime, int& outlen, int& outttl)
+string process(char* buffer, double &outtime, int& outlen, int& outttl, std::ofstream& output)
 {
   string ip = "";
 
-  bool isquery;
+  int isquery;
   char queryname[MAXLEN];
   char recordID[MAXLEN];
 
   bool toprocess = shouldprocess2(buffer, outtime, outlen, delimiters,
 				  ip, starttime, endtime, isquery, queryname, outttl);
 
+
   strcpy(recordID, buffer);
   if (!toprocess)
-    {
-      return 1;
-    }
+    return "";
 
-    bool isattack = false;
-    if(!isquery || outlen > 256)
-      isattack = true;
-    if (isquery == 2 && queries.size() == 0)
-      isattack = true;
-    for (auto qit = queries.begin(); qit != queries.end(); qit++)
-      if (strstr(queryname, qit->c_str()) != 0)
-	{
-	  isattack = true;	  
-	}
-    if (attackers.find(ip) != attackers.end() && attacksources)
+  bool isattack = false;
+  if((!isquery || outlen > 256) && queries.size() == 0)
+    isattack = true;
+  //cout<<"For "<<buffer<<" is query "<<isquery<<" queries size "<<queries.size()<<endl;
+  if (isquery == 2 && queries.size() == 0)
+    isattack = true;
+  for (auto qit = queries.begin(); qit != queries.end(); qit++)
+    if (strstr(queryname, qit->c_str()) != 0)
       {
 	isattack = true;
       }
-    cout<<recordID<<" ";
-    if (isattack)
-      cout<<"A\n";
-    else
-      cout<<"B\n";
-    return 0;
+
+  if (attacksources && isattack && !atlist)
+    {
+      unsigned int ipi=todec(ip);
+      attackers[int(ipi/32)] = attackers[int(ipi/32)] | (1 >> (ipi % 32));
+    }
+  if (attacksources && !isattack)
+    {      
+      unsigned int ipi=todec(ip);
+      int cur = attackers[int(ipi/32)] & (1 >> (ipi % 32));
+      if (cur > 0)
+	{
+	  isattack = true;
+	}
+    }
+  // Periodic reset
+  if ((outtime > lasttime + PERIOD) && !atlist && attacksources)
+    {
+      memset(attackers, 0, pow(2,24)*8);
+      lasttime = outtime;
+    }
+  char outs[MAXLEN];
+
+  if (isattack)
+    sprintf(outs, "%s A\n", recordID);
+  else
+    sprintf(outs, "%s B\n", recordID);
+
+  return outs;
 }
 
 
@@ -140,6 +165,7 @@ int main(int argc, char** argv)
 	  queries.insert(optarg);
 	  break;
 	case 'a':
+	  atlist = true;
 	  atfile = optarg;
 	  break;
 	case 's':
@@ -160,11 +186,10 @@ int main(int argc, char** argv)
       cout<<"You must specify a directory with pcap.xz files\n";
       exit(0);
     }
-  // Assume the attack has started and this is why we're being invoked
-  // If we are testing it helps to use a file with attackers
-  if (atfile != "")
-    loadattackers(atfile);
 
+  if (atlist)
+    loadattackers(atfile);
+  
   //Use for pcap
   loadfiles(readfolder.c_str(), process, extension, starttime, endtime);
 }

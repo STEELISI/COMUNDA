@@ -1,5 +1,22 @@
 #include "utils.h"
 
+// Convert string to address                                                                                                                                                            
+unsigned int todec(string ip)
+{
+  int res = 0;
+  int dec = 0;
+  for (int i=0; i<strlen(ip.c_str()); i++)
+    if (isdigit(ip[i]))
+      dec = dec*10+(ip[i]-'0');
+    else
+      {
+        res = res*256+dec;
+        dec = 0;
+      }
+  res = res*256+dec;
+  return (unsigned int) res;
+}
+
 // Trim whitespaces from a string
 string trim(string s)
 {
@@ -111,8 +128,9 @@ int parse(char* input, char delimiter, int** array)
 }
 
 // Load a file using pcap functionalities
-void loadfile2(char* fname, int (*process)(char*, double&, int&, int&))
+void loadfile2(char* fname, string (*process)(char*, double&, int&, int&, ofstream&), char* oname)
 {
+  cout<<"Reading "<<fname<<endl;
   long int curtime = 0;
   int stats = 0;
 
@@ -124,8 +142,15 @@ void loadfile2(char* fname, int (*process)(char*, double&, int&, int&))
   
   string cmd = "unxz -c " + (string)fname + " | ./stats - ";
 
+  char ofname[MAXLEN];
+  sprintf(ofname, "%s.tag", oname);
+  std::ofstream output(ofname, std::ofstream::out);
+  
   FILE* pipe = popen(cmd.c_str(), "r");
   int pkts = 0;
+  int i = 0;
+  const int MAX = 100000;
+  string line[MAX];
 	
   if (!pipe) throw std::runtime_error("popen() failed!");
     try {
@@ -140,7 +165,15 @@ void loadfile2(char* fname, int (*process)(char*, double&, int&, int&))
 	    int ttl = oldttl;
 	    // We still read from pipe even after we are done
 	    // because otherwise tcpdump pipe throws segfault
-	    int r = process(buffer, time, len, ttl);
+	    line[i++] = process(buffer, time, len, ttl, output);
+	    if (i == MAX)
+	      {
+		for (int j=0; j<i; j++)
+		  {
+		    output << line[j];
+		  }
+		i = 0;
+	      }
 	    if (time > oldtime)
 	      oldtime = time;
 	    if (len > 0)
@@ -154,95 +187,16 @@ void loadfile2(char* fname, int (*process)(char*, double&, int&, int&))
       throw;
     }
     pclose(pipe);
+    for (int j=0; j<i; j++)
+      {
+	output << line[j];
+      }
+    output.close();
     return;  
 }
 
-// Load a file using pcap functionalities
-void loadfiletxt(char* fname, int (*process)(char*, double&, int&, int&))
-{
-  long int curtime = 0;
-  int stats = 0;
-
-  cout <<"loading "<< fname << endl;
-
-  FILE *infile = fopen(fname, "r");
-
-
-  char buffer[MAXLEN];
-  bool done = false;
-
-  double oldtime = 0;
-  int oldlen = 0;
-  int oldttl = 0;
-  while (fgets(buffer, sizeof buffer, infile) != NULL) {
-    if (!done)
-      {
-	double time = oldtime;
-	int len = oldlen;
-	int ttl = oldttl;
-	// We still read from pipe even after we are done
-	// because otherwise tcpdump pipe throws segfault
-	int r = process(buffer, time, len, ttl);
-	if (time > oldtime)
-	  oldtime = time;
-	if (len > 0)
-	  oldlen = len;
-	if (ttl > 0)
-	  oldttl = ttl;
-      }
-  }
-  fclose(infile);
-  return;  
-}
-
-// Load a file (only requests to server in IPv4 or IPv6)
-void loadfile(char* fname, int (*process)(char*, double&, int&, int&))
-{
-  long int curtime = 0;
-  int stats = 0;
-
-  cout <<"loading "<< fname << endl;
-
-  FILE *infile = fopen(fname, "r");
-
-
-  char buffer[MAXLEN];
-  bool done = false;
-  
-  string cmd = "unxz -c " + (string)fname + " | tcpdump -r - -nn -tt -v \"(ip or ip6) and dst port 53 and not src port 53 and (udp or tcp) \""; //(tcp and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)))\"";
-  FILE* pipe = popen(cmd.c_str(), "r");
-  if (!pipe) throw std::runtime_error("popen() failed!");
-    try {
-      double oldtime = 0;
-      int oldlen = 0;
-      int oldttl = 0;
-      while (fgets(buffer, sizeof buffer, pipe) != NULL) {
-	if (!done)
-	  {
-	    double time = oldtime;
-	    int len = oldlen;
-	    int ttl = oldttl;
-	    // We still read from pipe even after we are done
-	    // because otherwise tcpdump pipe throws segfault
-	    int r = process(buffer, time, len, ttl);
-	    if (time > oldtime)
-	      oldtime = time;
-	    if (len > 0)
-	      oldlen = len;
-	    if (ttl > 0)
-	      oldttl = ttl;
-	  }
-      }
-    } catch (...) {
-      pclose(pipe);
-      throw;
-    }
-    pclose(pipe);
-    return;
-}
-
 // Load files from dir
-void loadfiles(const char* file, int (*process)(char*, double&, int&, int&), string extension, long int starttime, long int endtime)
+void loadfiles(const char* file, string (*process)(char*, double&, int&, int&, ofstream& ), string extension, long int starttime, long int endtime)
 {
   bool done = false;
   int nd = 0;
@@ -281,7 +235,7 @@ void loadfiles(const char* file, int (*process)(char*, double&, int&, int&), str
           continue;
         }
       long myepoch = getepoch(dirs[d].namelist[nf]->d_name);
-      if (myepoch < starttime - 300)
+      if (myepoch < starttime - 30)
         {
           continue;
         }
@@ -291,7 +245,7 @@ void loadfiles(const char* file, int (*process)(char*, double&, int&, int&), str
         }
       if (done)
         break;
-      loadfile2(filename, process);
+      loadfile2(filename, process, dirs[d].namelist[nf]->d_name);
       long diff = time(0) - now;
     }
 }
@@ -300,10 +254,24 @@ void loadfiles(const char* file, int (*process)(char*, double&, int&, int&), str
 const int NQ=10;
 char* querytypes[NQ]= {"A?", "AAAA?", "CNAME?", "PTR?", "NS?", "SOA?", "MX?", "DS?", "SRV?", "TXT?"};
 
+// Is given string epoch time
+bool nottime(char* buffer)
+{
+  if (strlen(buffer) < 17)
+    return true;
+  for(int i=0; i<17; i++)
+    {
+      if ((i <= 9 || i > 10) && !isdigit(buffer[i]))
+	return true;
+      if (i == 10 && buffer[i] != '.')
+	return true;
+    }
+  return false;
+}
 
 // More elegant way to process with libpcap
 bool shouldprocess2(char* buffer, double& outtime, int& outlen, int*& delimiters, string& ip,
-		    double starttime, double endtime, bool& isquery, char* queryname, int& outttl)
+		    double starttime, double endtime, int& isquery, char* queryname, int& outttl)
 {
   //std::cout<<"Got buffer "<<buffer<<std::endl;
   int n = parse(buffer,' ', &delimiters);
@@ -337,11 +305,10 @@ bool shouldprocess2(char* buffer, double& outtime, int& outlen, int*& delimiters
     }
   
   // Do a format check, is the first item epoch time
-  if (!regex_match (buffer, regex("(\\d+\\.\\d+)(\-)(\\d+\\.\\d+)(.*)") ))
+  if (nottime(buffer))
     {
       return false;
     }
-  
   return true;
 }
 

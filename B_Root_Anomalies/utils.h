@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
-#include <regex>
 
 #define AR_LEN 300 // highest number of delimiters in a string parsed with parse function
 #define MAXLEN 20000
@@ -72,16 +71,18 @@ struct dirrecord
 };
 
 // Utility functions
+bool nottime(char* buffer);
+unsigned int todec(string ip);
 bool checkdigits(const char* str);
 int gettwo(char* src);
 int parse(char* input, char delimiter, int** array);
-void loadfile2(char* fname, int (*process)(char*, double&, int&, int&));
-void loadfiles(const char* file, int (*process)(char*, double&, int&, int&),
+void loadfile2(char* fname, string (*process)(char*, double&, int&, int&, ofstream&));
+void loadfiles(const char* file, string (*process)(char*, double&, int&, int&, ofstream&),
 	       string, long int, long int);
 unsigned long getepoch(string filename);
 int filter(const struct dirent *dir);
 bool shouldprocess2(char* buffer, double& outtime, int& outlen, int*& delimiters, string& ip,
-		    double starttime, double endtime, bool& isquery, char* queryname, int& outttl);
+		    double starttime, double endtime, int& isquery, char* queryname, int& outttl);
 
 string trim(string s);
 

@@ -129,9 +129,10 @@ void packetHandler(u_char *userData, const struct pcap_pkthdr* pkthdr, const u_c
 	tcpHeader = (struct tcphdr*)(packet + sizeof(struct ether_header) + size_ip);
 	int size_tcp = tcpHeader->th_off*4;
 	size_payload = ip_len - (size_ip + size_tcp);
+	//cout<<"Payload "<<size_payload<<endl;
 	sport = ntohs(tcpHeader->source);
 	dport = ntohs(tcpHeader->dest);
-	if (size_payload > 0)
+	if (size_payload > 8) // size of DNS header
 	  {	    
 	    payload = (u_char*)(packet + sizeof(struct ether_header) + size_ip + size_tcp);
 	    opcode = payload[2]>>4;
@@ -146,7 +147,7 @@ void packetHandler(u_char *userData, const struct pcap_pkthdr* pkthdr, const u_c
 	sport = ntohs(udpHeader->source);
 	dport = ntohs(udpHeader->dest);
 	size_payload = ip_len - (size_ip + size_udp);
-	if (size_payload > 0)
+	if (size_payload > 8) // size of DNS header
 	  {
 	    payload = (u_char*)(packet + sizeof(struct ether_header) + size_ip + size_udp);
 	    opcode = payload[2]>>4;
@@ -158,11 +159,11 @@ void packetHandler(u_char *userData, const struct pcap_pkthdr* pkthdr, const u_c
 
     //std::cout<<std::fixed<<ts<<" proto "<<proto<<" caplen "<<caplen<<" plen "<<plen<<" payload size "<<size_payload<<" opcode "<<opcode<<" payload ";
 
-    if (size_payload > 0 && opcode == 0)
+    if (size_payload > 8 && opcode == 0)
       {
 	//for (int i=0; i<size_payload; i++)
 	//{
-	//  std::cout<<(int)payload[i]<<" ";
+	// std::cout<<(int)payload[i]<<" ";
 	//}
 	//std::cout<<std::endl;
 	for (int i=12; i<size_payload; i++)
