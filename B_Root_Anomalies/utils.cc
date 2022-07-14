@@ -235,7 +235,7 @@ void loadfiles(const char* file, string (*process)(char*, double&, int&, int&, o
           continue;
         }
       long myepoch = getepoch(dirs[d].namelist[nf]->d_name);
-      if (myepoch < starttime - 30)
+      if (myepoch < starttime - 300)
         {
           continue;
         }
