@@ -16,3 +16,4 @@ where recordID looks like:
 ```
 timestamp-sourceIP-sourceport-destIP-destport
 ```
+and label can be A (attack) or B (benign)
