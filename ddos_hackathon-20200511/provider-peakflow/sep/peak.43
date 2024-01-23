@@ -1,0 +1,4 @@
+Target 113.92.254.108
+start 1600592385
+end 1600592839
+type UDP CLDAPAmplification IPFragmentation DNSAmplification 

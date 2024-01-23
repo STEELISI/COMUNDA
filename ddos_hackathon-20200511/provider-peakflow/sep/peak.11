@@ -1,0 +1,4 @@
+Target 17.20.116.236
+start 1600023226
+end 1600023620
+type NTPAmplification UDP TotalTraffic 

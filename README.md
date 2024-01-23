@@ -17,11 +17,6 @@ As an example, labels created by the provider for the
 
     B/B_Root_Anomaly-20190907/provider-uscisiant
 
-When citing labels, please use the label name (omit "provider" if present)
-and dataset name. For example provider-uscisiant labels from the above
-example could be cited as "uscisiant labels for B_Root_Anomaly-20190907
-dataset".
-
 In each subdirectory containing labels, please refer to the specific
 README file that describes the associated labels or tools to create
 the labels and how to use them.
@@ -46,3 +41,10 @@ tools from the "tools/usc-isi-antlab/ddos" directory and are
 referenced in the B/B_Root_Anomaly-20190907/provider/README.md file.
 These are generic tools that are used for many of the datasets
 prefixed with /B_Root_Anomaly-/.
+
+## Citing labels
+
+When citing labels, please use the label name (omit "provider" if present)
+and dataset name. For example provider-uscisiant labels from the above
+example could be cited as "uscisiant labels for B_Root_Anomaly-20190907
+dataset".

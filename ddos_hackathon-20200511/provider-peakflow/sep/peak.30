@@ -1,0 +1,4 @@
+Target 17.20.127.115
+start 1600406948
+end 1600407440
+type UDP IPFragmentation TotalTraffic DNSAmplification 

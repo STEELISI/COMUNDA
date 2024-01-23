@@ -1,0 +1,4 @@
+Target 113.41.244.95
+start 1589289558
+end 1589297143
+type TCPSYN/ACKAmplification ICMP 

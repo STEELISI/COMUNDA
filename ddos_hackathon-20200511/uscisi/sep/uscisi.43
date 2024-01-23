@@ -1,0 +1,4 @@
+Target 113.92.254.108
+start 1600592324
+end 1600592510
+type CLDAPAmplification IPFragmentation DNSAmplification 

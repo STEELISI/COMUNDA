@@ -1,0 +1,4 @@
+Target 16.52.236.140
+start 1600639960
+end 1600640540
+type UDP CLDAPAmplification IPFragmentation TotalTraffic DNSAmplification 
