@@ -51,3 +51,6 @@ pkts in that second received by a given destination and matching a given traffic
 or A-attack. 
 
 **Note: the tool also needs maptags.txt file in this directory**
+
+**Note: this tool selects which vectors to output probabilistically, and will produce different
+outputs for different runs.**
