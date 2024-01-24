@@ -21,6 +21,8 @@ output is shown below:
 
        2|1589270008|64|1589270398|464|6|0|0|0|282490653|388|0|0|0|169232211|59176|0|0|663|680|24|0|122880|180699136|B
 
+**Note: the tool also needs maptags.txt file in this directory**
+
 ## Using the tool for data mining
 
 Data mining tool will produce vectors that you can use for the machine learning example in our documentation.
@@ -47,3 +49,5 @@ The tool produces a csv file with vectors where each element of the vector is th
 pkts in that second received by a given destination and matching a given traffic type
 (e.g., DNS replies) that could be misused for attack. Last element of the vector is label, B-benign
 or A-attack. 
+
+**Note: the tool also needs maptags.txt file in this directory**
